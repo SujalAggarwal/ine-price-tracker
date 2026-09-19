@@ -26,8 +26,6 @@ services:
   - type: web
     name: ine-price-tracker-frontend
     env: static
-    region: oregon
-    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
