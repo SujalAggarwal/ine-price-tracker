@@ -12,11 +12,11 @@ export async function searchStore(query, limit = 5) {
   return res.json();
 }
 
-export async function trackProduct(productId) {
+export async function trackProduct(storeProductId) {
   const res = await fetch(`${API_BASE}/products`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId })
+    body: JSON.stringify({ storeProductId })
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));

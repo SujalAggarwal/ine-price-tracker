@@ -3,7 +3,7 @@ import { Search, Plus, Loader2, X, AlertCircle } from 'lucide-react';
 import { searchStore, trackProduct } from '../utils/api';
 import { formatCurrency } from '../utils/formatters';
 
-export default function SearchModal({ isOpen, onClose, onProductAdded }) {
+export default function SearchModal({ isOpen, onClose, onTrackSuccess }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -32,23 +32,23 @@ export default function SearchModal({ isOpen, onClose, onProductAdded }) {
       setError(null);
       try {
         const data = await searchStore(query);
-        setResults(data.products || []);
+        setResults(data.results || []);
       } catch (err) {
         setError('Failed to search products');
       } finally {
         setIsSearching(false);
       }
-    }, 500);
+    }, 400);
 
     return () => clearTimeout(timer);
   }, [query]);
 
-  const handleTrack = async (productId) => {
-    setTrackingId(productId);
+  const handleTrack = async (storeProductId) => {
+    setTrackingId(storeProductId);
     setError(null);
     try {
-      await trackProduct(productId);
-      onProductAdded();
+      const tracked = await trackProduct(storeProductId);
+      if (onTrackSuccess) onTrackSuccess(tracked);
       onClose();
     } catch (err) {
       setError(err.message || 'Failed to track product');
@@ -102,22 +102,22 @@ export default function SearchModal({ isOpen, onClose, onProductAdded }) {
           ) : results.length > 0 ? (
             <div className="py-2">
               {results.map((product) => (
-                <div key={product.id} className="flex items-center gap-4 px-6 py-3 hover:bg-white/5 transition-colors group">
+                <div key={product.storeProductId} className="flex items-center gap-4 px-6 py-3 hover:bg-white/5 transition-colors group">
                   <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center p-1 overflow-hidden shrink-0">
-                    <img src={product.image_url} alt={product.name} className="w-full h-full object-contain" />
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain" />
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     <h4 className="text-white font-medium truncate">{product.name}</h4>
-                    <p className="text-textMain/70 text-sm">{formatCurrency(product.price)}</p>
+                    <p className="text-textMain/70 text-xs">{product.brand || product.category || 'Course'}</p>
                   </div>
                   
                   <button
-                    onClick={() => handleTrack(product.id)}
-                    disabled={trackingId === product.id}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => handleTrack(product.storeProductId)}
+                    disabled={trackingId === product.storeProductId}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    {trackingId === product.id ? (
+                    {trackingId === product.storeProductId ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
