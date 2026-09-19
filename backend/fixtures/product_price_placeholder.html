@@ -1,0 +1,104 @@
+<!-- 
+  LOADING PLACEHOLDER - Product Price Block (Observed from source code analysis)
+  
+  This is the DOM that React renders for the price section BEFORE price is revealed.
+  Price is hidden until user hovers AND satisfies a bot-detection challenge.
+  
+  Phase: "idle" (initial state, before user interaction)
+-->
+<div class="price-block price-idle pw-m4">
+  <div>
+    <p class="price-status">Price hidden</p>
+    <p class="price-substatus">Check the current price and availability.</p>
+  </div>
+  <button type="button" class="btn btn-primary" aria-label="Reveal price">
+    Reveal price
+  </button>
+</div>
+
+<!--
+  ===========================================================================================
+  Phase: "loading" (after user clicks "Reveal price", while waiting for API response)
+  Note: The "price-idle" class is ABSENT during loading; aria-live and aria-busy are added.
+  ===========================================================================================
+-->
+<div class="price-block pw-m4" aria-live="polite" aria-busy="true">
+  <div class="spinner" aria-hidden="true"></div>
+  <div>
+    <p class="price-status">Loading current price…</p>
+  </div>
+</div>
+
+<!--
+  ===========================================================================================
+  Phase: "retrying" (after first attempt fails, shown for attempts 2..N)
+  N = jr (the max retry count constant, value not extracted but is > 1)
+  ===========================================================================================
+-->
+<div class="price-block pw-m4" aria-live="polite" aria-busy="true">
+  <div class="spinner" aria-hidden="true"></div>
+  <div>
+    <p class="price-status">Retrying (attempt 2/3)…</p>
+    <p class="price-substatus">Store responded with <span>429</span>.</p>
+  </div>
+</div>
+
+<!--
+  ===========================================================================================
+  Phase: "error" (all retries exhausted)
+  ===========================================================================================
+-->
+<div class="price-block price-error pw-m4" aria-live="assertive">
+  <p class="price-status">Couldn't load the price after 3 attempts.</p>
+  <p class="price-substatus">429</p>
+  <button type="button" class="btn btn-primary">Try again</button>
+</div>
+
+<!--
+  ===========================================================================================
+  ADDITIONAL LOADING PLACEHOLDERS (home page / catalog)
+  ===========================================================================================
+  
+  While catalog products load:
+-->
+<section class="browse">
+  <div class="browse-intro">
+    <h1>All products</h1>
+    <p>Loading… · browse the shelves. Prices are shown on each product's page.</p>
+  </div>
+  <div class="grid-empty">Loading products…</div>
+</section>
+
+<!--
+  Catalog error state:
+-->
+<div class="grid-empty grid-error">Couldn't load products: catalog 500</div>
+
+<!--
+  Product detail error state:
+-->
+<div class="grid-empty grid-error">Couldn't load this product: product 404</div>
+
+<!--
+  ===========================================================================================
+  NOTES FOR SCRAPER
+  ===========================================================================================
+  
+  CSS class names come from /api/layout and CHANGE when layout.revision updates.
+  Current revision 626001 classes:
+    priceWrap: "pw-m4"
+    priceValue: "pv-m4"
+    mrp: "mr-m4"
+    sale: "sl-m4"
+    badge: "bd-m4"
+    rating: "rt-m4"
+    seller: "sr-m4"
+    delivery: "dl-m4"
+    stock: "st-m4"
+  
+  The "price-idle", "price-loading", "price-error", "price-success", "price-block",
+  "stock-badge", "in-stock", "out-stock" class names appear STATIC (not from /api/layout).
+  
+  DANGER: A scraper reading the DOM might see "Price hidden", "Loading current price…",
+  or empty elements and mistakenly store these as real prices.
+-->

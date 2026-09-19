@@ -1,0 +1,109 @@
+<!-- 
+  OUT-OF-STOCK STATE - Stock badge HTML (Observed from source code analysis)
+  Source: bundle.js -> stock-badge logic
+  
+  When m.stock === 0:
+-->
+<span class="stock-badge out-stock">Out of stock</span>
+
+<!--
+  When m.stock > 0 (in-stock), the zr() function formats the quantity.
+  From the source: zr(m.stock) → function that formats stock count.
+  Examples observed in source context suggest possible values:
+  
+  "5 left"    → low stock
+  "In stock"  → generic positive stock
+  
+  The actual text depends on the zr() formatting function (obfuscated).
+  Based on common e-commerce patterns and the code structure:
+-->
+<span class="stock-badge in-stock">In stock</span>
+
+<!-- OR (low stock variant): -->
+<span class="stock-badge in-stock">5 left</span>
+
+<!--
+  ===========================================================================================
+  FULL PRICE-SUCCESS BLOCK with OUT-OF-STOCK (from source code)
+  ===========================================================================================
+  
+  When price loads successfully but product is out of stock:
+  Note: Price is still revealed even for out-of-stock items.
+  
+  priceTag is "output" (from layout.priceTag), priceCarrier is "split" (layout.priceCarrier)
+  The price is shown in two hidden <span> elements (d1, d2) - obfuscated representation.
+  
+  Layout order (from layout.order): ["delivery", "rating", "stock", "seller"]
+-->
+<div class="price-block price-success pw-m4" aria-live="polite">
+  <div class="price-main">
+    <!-- Hidden spans containing obfuscated price strings (d1, d2) -->
+    <span class="price-value" aria-hidden="true" style="display:none">v3_obfuscated_price_d1</span>
+    
+    <!-- MRP (original/strikethrough price) -->
+    <span class="mr-m4" style="text-decoration:line-through; opacity:0.55; margin-right:10px">₹5,999</span>
+    
+    <!-- Deal price (only shown if m.triple && m.sale !== undefined) -->
+    <!-- <span class="sl-m4" style="opacity:0.75; margin-right:10px">Deal price ₹4,299</span> -->
+    
+    <!-- Main price (priceTag="output" means <output> element; priceCarrier="split" means split rendering) -->
+    <output class="v42 pv-m4" style="font-family:var(--serif); font-size:2.4rem; font-weight:700; letter-spacing:-0.02em; opacity:1">
+      ₹4,999
+    </output>
+    
+    <!-- Discount badge -->
+    <span class="bd-m4" style="margin-left:10px; color:#2f855a; font-weight:600">17% off</span>
+    
+    <!-- Hidden amount span -->
+    <span class="amount" data-price="true" aria-hidden="true" style="display:none">v3_obfuscated_price_d2</span>
+  </div>
+  
+  <div class="price-facets">
+    <!-- delivery (first in order) -->
+    <div class="dl-m4">
+      <small>Get it by Tue, 23 Sep</small>
+    </div>
+    
+    <!-- rating -->
+    <div class="rt-m4">
+      <span style="display:inline-block; width:90px; height:10px; background:#e2e8f0; border-radius:5px; vertical-align:middle">
+        <span style="display:block; width:72%; height:100%; background:#d69e2e; border-radius:5px"></span>
+      </span>
+      <small>184 ratings</small>
+    </div>
+    
+    <!-- stock - OUT OF STOCK -->
+    <div class="st-m4">
+      <span class="stock-badge out-stock">Out of stock</span>
+    </div>
+    
+    <!-- seller -->
+    <div class="sr-m4">
+      <small>Sold by <span>Irk</span><!-- obfuscated middle --><span>nwood Electronics</span></small>
+    </div>
+  </div>
+  
+  <div class="price-meta">
+    <span>Loaded in 1 attempt</span>
+    <button type="button" class="btn btn-ghost btn-sm">Refresh price</button>
+  </div>
+</div>
+
+<!--
+  ===========================================================================================
+  NOTES
+  ===========================================================================================
+  
+  IMPORTANT: The "pv-m4" class (priceValue) is on the <output> element (layout.priceTag="output").
+  A scraper looking for <span class="pv-m4"> will FAIL - it must check <output> element too.
+  
+  The price element also gets a ROTATING obfuscated class (d.rot = "v" + random number each render).
+  So the <output> element has TWO classes: one rotating (v42), one from layout (pv-m4).
+  
+  The real price is in the text content of the <output> or <span> element with class pv-m4.
+  The hidden price-value span (class "price-value") contains an OBFUSCATED version, not the real price.
+  
+  Stock values observed in source:
+  - "Out of stock" (class: stock-badge out-stock)
+  - [formatted stock count] (class: stock-badge in-stock)  - text from zr() function
+-->

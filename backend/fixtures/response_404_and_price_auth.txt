@@ -1,0 +1,33 @@
+HTTP/1.1 404 Not Found
+Content-Type: text/html; charset=UTF-8
+
+[SPA shell HTML - same as spa_shell_initial.html]
+NOTE: The server returns HTTP 404 status but the body is still the SPA shell HTML.
+The SPA router renders the home page ("/") for any unmatched route.
+Path tested: /api/products  ->  404
+Path tested: /api/product/767/price  ->  404
+Path tested: /api/products/search?q=cable  ->  404
+Path tested: /api/search  ->  404
+Path tested: /api/listings  ->  404
+Path tested: /api/live/767  ->  404
+Path tested: /api/price/767  ->  404
+Path tested: /api/product/  ->  404  (trailing slash, no ID)
+Path tested: /robots.txt  ->  200 but body is SPA HTML (not a text/plain robots file)
+
+--- SUCCESSFUL ENDPOINTS ---
+GET /api/catalog?page={N}&pageSize={N}   200 application/json  (paginated product list, no search)
+GET /api/product/{id}                     200 application/json  (static product details, no price)
+GET /api/layout                           200 application/json  (CSS class map, changes on revision bump)
+
+--- PRICE QUOTE ENDPOINT (PROTECTED, NOT DIRECTLY FETCHABLE) ---
+The price/quote API requires:
+  1. Canvas fingerprint (browser-rendered canvas pixel hash)
+  2. WebGL fingerprint
+  3. Mouse movement trajectory data (min 8 frames, minDwellMs requirement)
+  4. POST to an intermediate token endpoint (URL obfuscated in bundle)
+  5. Authenticated GET to final quote endpoint with Bearer token
+  
+Without satisfying the bot-detection challenge, the price endpoint returns:
+  HTTP 429 Too Many Requests  ->  class Er (retryable)
+  HTTP 401/403               ->  class Tr (not retryable, auth failure)
+  Other non-ok status        ->  class Er (retryable)
