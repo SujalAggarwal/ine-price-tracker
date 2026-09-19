@@ -165,9 +165,9 @@ router.get('/products', async (req, res, next) => {
         (a, b) => new Date(b.created_at) - new Date(a.created_at)
       );
 
-      const { price_history, scrape_logs, ...productFields } = p;
       return {
-        ...productFields,
+        ...p,
+        price_history: sortedPrices,
         latest_price: sortedPrices[0] || null,
         latest_scrape_status: sortedLogs[0]?.status || null,
         latest_scrape_log: sortedLogs[0] || null
