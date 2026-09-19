@@ -1,84 +1,136 @@
 import React, { useState, useEffect } from 'react';
+import { Plus, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
+import Header from './components/Header';
+import ProductCard from './components/ProductCard';
+import SearchModal from './components/SearchModal';
+import EmptyState from './components/EmptyState';
+import { fetchProducts } from './utils/api';
 
 export default function App() {
-  const [health, setHealth] = useState(null);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const loadProducts = async (isManual = false) => {
+    if (isManual) setRefreshing(true);
+    try {
+      setError(null);
+      const data = await fetchProducts();
+      setProducts(data.products || []);
+    } catch (err) {
+      console.error('Error loading products:', err);
+      setError(err.message || 'Failed to fetch tracked products');
+    } finally {
+      setLoading(false);
+      if (isManual) setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    fetch('/api/health')
-      .then(res => res.json())
-      .then(data => {
-        setHealth(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Health check failed:', err);
-        setHealth({ status: 'error', error: err.message });
-        setLoading(false);
-      });
+    loadProducts();
   }, []);
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
-              INE
-            </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-              Price Tracker
-            </h1>
-          </div>
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            Phase 1 Scaffold
-          </span>
-        </div>
-      </header>
+  const handleProductTracked = (newProduct) => {
+    // Add or refresh products list
+    setProducts((prev) => {
+      const exists = prev.some((p) => p.id === newProduct.id);
+      if (exists) return prev;
+      return [newProduct, ...prev];
+    });
+    // Trigger fresh reload in background to get latest snapshots
+    loadProducts();
+  };
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-12 flex-1 flex flex-col justify-center items-center">
-        <div className="w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-white">Project Scaffold Ready</h2>
-            <p className="text-slate-400 text-sm max-w-md mx-auto">
-              Phase 1 foundation established with React (Vite), Express Node.js, and Supabase PostgreSQL schema.
+  return (
+    <div className="min-h-screen flex flex-col bg-background text-textMain selection:bg-primary selection:text-background relative">
+      {/* Background glowing gradients */}
+      <div className="fixed top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none -z-10 animate-pulse" />
+      <div className="fixed bottom-10 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl pointer-events-none -z-10" />
+
+      {/* Top Header */}
+      <Header />
+
+      {/* Main Container */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Actions Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-white/5">
+          <div>
+            <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+              Tracked Courses & Certifications
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                {products.length} {products.length === 1 ? 'item' : 'items'}
+              </span>
+            </h2>
+            <p className="text-sm text-textMain/70 mt-1">
+              Automated price extraction & historical trend tracking powered by Supabase & Puppeteer.
             </p>
           </div>
 
-          {/* Backend Connection Card */}
-          <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
-              <span className="text-sm font-medium text-slate-300">Backend API Health</span>
-              {loading ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  Checking...
-                </span>
-              ) : health?.status === 'ok' ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  ● Healthy
-                </span>
-              ) : (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                  ● Offline / Unreachable
-                </span>
-              )}
-            </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => loadProducts(true)}
+              disabled={refreshing || loading}
+              className="p-2.5 rounded-xl glass-panel border border-white/10 text-textMain hover:text-white hover:border-white/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+              title="Refresh product list"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-primary' : ''}`} />
+            </button>
 
-            {health && (
-              <pre className="bg-slate-900 p-4 rounded-lg text-xs font-mono text-slate-300 overflow-x-auto border border-slate-800">
-                {JSON.stringify(health, null, 2)}
-              </pre>
-            )}
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-background font-semibold hover:bg-opacity-90 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Track New Product
+            </button>
           </div>
         </div>
+
+        {/* Content State Handling */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="h-64 rounded-2xl bg-surface/50 border border-white/5" />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="glass-panel border-rose-500/20 bg-rose-500/5 rounded-2xl p-6 text-center max-w-md mx-auto my-12">
+            <AlertCircle className="w-10 h-10 text-rose-400 mx-auto mb-3" />
+            <h4 className="text-white font-medium mb-1">Error Connecting to Backend</h4>
+            <p className="text-rose-200/70 text-sm mb-4">{error}</p>
+            <button
+              onClick={() => loadProducts(true)}
+              className="px-4 py-2 text-xs font-semibold bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg transition"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : products.length === 0 ? (
+          <EmptyState onOpenSearch={() => setIsSearchOpen(true)} />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-up">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
-        INE Product Price Tracker &copy; 2026. Internship Assignment - Phase 1.
+      <footer className="border-t border-white/5 py-6 text-center text-xs text-textMain/50">
+        INE Price Tracker &bull; Powered by Express, Puppeteer & Supabase &bull; 2026
       </footer>
+
+      {/* Search & Track Modal */}
+      {isSearchOpen && (
+        <SearchModal
+          isOpen={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+          onTrackSuccess={handleProductTracked}
+        />
+      )}
     </div>
   );
 }
