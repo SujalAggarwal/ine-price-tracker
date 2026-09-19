@@ -20,8 +20,8 @@ ENV PORT=5000
 # Expose port
 EXPOSE 5000
 
-# Create and use a non-root user for security
-RUN useradd -m pwuser && chown -R pwuser:pwuser /app
+# Create and use a non-root user for security (pwuser already exists in Playwright image)
+RUN chown -R pwuser:pwuser /app
 USER pwuser
 
 # Start the application
