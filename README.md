@@ -1,72 +1,58 @@
-# INE Price Tracker - Software Engineer Intern Assignment
+# INE Price Tracker - My Web Scraper Assignment
 
-A full-stack web application that allows users to pick products from the INE mock storefront, track their prices over time via scheduled scraping, and view price trends and scrape logs.
+This is my submission for the Software Engineer Intern assignment. I built a price tracker that lets users select products from the mock store, tracks their price changes over time, and shows the scraping logs. 
 
-## Tech Stack
-- **Frontend:** React.js, Vite, Tailwind CSS (Vanilla CSS approach with utility classes)
-- **Backend:** Node.js, Express
-- **Database:** Supabase (PostgreSQL)
-- **Scraping Engine:** Playwright
-- **Deployment:** Render (Backend & Frontend)
+I kept the stack pretty standard: React on the frontend (with Tailwind for styling), and a Node/Express backend talking to a Supabase PostgreSQL database. For the scraper itself, I went with Playwright.
 
-## Environment Variables
-Create a `.env` file in both `frontend` and `backend` directories.
+## How to Set It Up
 
-### Backend (`backend/.env`)
+If you want to run this locally, you'll need two `.env` files.
+
+**For the backend (`backend/.env`):**
 ```env
 PORT=5000
 NODE_ENV=development
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-CLIENT_ORIGIN=http://localhost:5173 # Or your deployed frontend URL
-CRON_SECRET=your_secret_string # Used to secure the cron scraping endpoint
+CLIENT_ORIGIN=http://localhost:5173
+CRON_SECRET=local-dev-cron-secret
 ```
 
-### Frontend (`frontend/.env`)
+**For the frontend (`frontend/.env`):**
 ```env
-VITE_API_URL=http://localhost:5000/api # Or your deployed backend URL + /api
+VITE_API_URL=http://localhost:5000/api
 ```
 
-## Setup Instructions
+### Steps to Run
 
-1. **Install Dependencies**
+1. **Install everything:**
    ```bash
-   # Install backend dependencies
    cd backend
    npm install
    npx playwright install chromium --with-deps
 
-   # Install frontend dependencies
    cd ../frontend
    npm install
    ```
 
-2. **Database Setup (Supabase)**
-   Execute the SQL script located at `backend/db/schema.sql` in your Supabase SQL editor to create the necessary tables (`products`, `price_history`, `scrape_logs`).
+2. **Database:**
+   Just copy the SQL from `backend/db/schema.sql` and run it in your Supabase SQL editor. It sets up the tables for products, history, and logs.
 
-3. **Run Locally**
-   ```bash
-   # Terminal 1 (Backend)
-   cd backend
-   npm run dev
+3. **Start the servers:**
+   Open two terminals.
+   In one, run `npm run dev` in the backend folder.
+   In the other, run `npm run dev` in the frontend folder.
 
-   # Terminal 2 (Frontend)
-   cd frontend
-   npm run dev
-   ```
+## How the Scraping Schedule Works
 
-## Scraping Schedule & Cron Job Setup
-The scraper is designed to run in a scheduled manner, rather than an always-on loop (to accommodate free-tier hosting limitations). 
+Since I'm using free hosting on Render (which spins down when not in use), running a continuous `setInterval` loop in Node wasn't going to work. 
 
-- **Schedule:** Every 2 hours.
-- **Trigger URL:** `POST https://<your-backend-url>/api/cron/scrape`
-- **Authentication:** Must pass the `Authorization` header matching your `CRON_SECRET`.
-  `Authorization: Bearer <your_cron_secret>`
+Instead, I set up a secure API endpoint (`POST /api/cron/scrape`) that requires an `Authorization` header with a secret key. I used **cron-job.org** to ping this endpoint every 2 hours. This wakes up the server and triggers the batch scrape.
 
-You can use a free service like [cron-job.org](https://cron-job.org) to ping this endpoint every 2 hours.
+## Testing the Scraper Manually
 
-## Local Scraper Testing (Headed Mode)
-To observe the scraper's behavior (handling slow loads or shifts), run it in headed mode locally:
+If you want to actually see the scraper in action (like how it hovers to bypass the bot detection or handles fake errors), you can run it in headed mode:
+
 ```bash
 cd backend
 node src/scraper/cli.js --headed

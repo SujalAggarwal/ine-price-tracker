@@ -1,23 +1,29 @@
-# Design & Implementation Note
+# Design Notes & Lessons Learned
 
-## Scraping Reliability Strategy
-The mock storefront is intentionally hostile to scraping—elements load asynchronously, requests timeout, and anti-bot mechanisms trigger pseudo-errors (e.g., "block error states"). To make the scraper reliable across unattended runs, the following strategies were implemented:
+## Making the Scraper Reliable
 
-1. **Headless Browser (Playwright):** 
-   While lightweight HTTP fetching is preferred, the mock store requires complex JavaScript rendering and interaction (specifically, a "Reveal Price" button that only appears after a random delay and requires mouse dwell time to bypass bot detection). Playwright was necessary to mimic human interaction.
+The biggest challenge with this assignment was dealing with the mock store's intentional obstacles. Things load at random times, requests time out on purpose, and there are fake "block error" states designed to trip up bots.
 
-2. **Retry Logic & Graceful Failures:**
-   The `extract.js` scraper uses a robust retry loop for element selection and interactions. If a "BlockErrorState" or "ClickFailedError" occurs (which is common due to the store's intentional flakiness), the scraper catches these explicitly. It does **not** store incorrect data or crash the server; instead, it logs the exact failure state to the `scrape_logs` table and gracefully proceeds to the next item.
+Here is how I tackled it:
+
+1. **Using Playwright over simple fetch:** 
+   Normally I'd just use a simple HTTP client to scrape, but since the mock store requires you to actually click a "Reveal Price" button that only shows up after a delay, I had to use a real browser. Playwright made it easier to mimic human behavior.
+
+2. **Retry logic that doesn't hide errors:**
+   The scraper has a loop that tries to find and click the elements. Because the store intentionally throws "BlockErrorState" or just fails to click sometimes, I made sure my scraper catches these specific errors. Instead of crashing the whole app or saving fake data, it logs the exact failure reason to the database and moves on to the next product. I wanted the logs to be completely honest about when it failed and why.
 
 3. **Stateless Cron Triggers:**
-   To accommodate free-tier hosting (which sleeps after inactivity), the scraping loop is not an always-on interval in Node.js. Instead, the backend exposes a secured `POST /api/cron/scrape` endpoint. An external cron service pings this endpoint, waking the server and executing a batch scrape.
+   I hosted this on Render's free tier, which goes to sleep if nobody uses it. So, a basic `setInterval` loop in Node wouldn't run overnight. I decided to make a secured `POST` endpoint instead and used a free external cron service to ping it every 2 hours.
 
-## Trade-offs Made
-- **Playwright Overhead vs. Lightweight Fetch:** Opting for Playwright increases memory overhead and deployment complexity (requiring a custom Dockerfile on Render). However, it was a necessary trade-off to accurately interact with the dwell-time anti-bot mechanisms.
-- **Database Normalization:** We split `products`, `price_history`, and `scrape_logs` into separate tables. While this requires more complex joins on the frontend, it ensures a highly scalable and honest historical log, preventing price arrays from bloating the core product document.
+## Trade-offs I Had to Make
 
-## AI Tools: First Attempts & Corrections
-During development, AI assistance was heavily utilized, but required several manual corrections:
-- **Misinterpreting the Anti-Bot Logic:** Initially, the AI suggested simple `page.click('.price-reveal')` commands. This failed because the mock store checks for mouse movement and dwell time before accepting clicks. The AI's code had to be corrected to include `page.mouse.move()` and `page.waitForTimeout()` to simulate human hovering.
-- **Data Schema Mismatches:** The AI initially mismatched the primary keys, trying to use `productId` from the store as the primary UUID in Supabase, leading to UPSERT conflicts. This was corrected by defining an `external_id` (store ID) and a separate native UUID for our internal relations.
-- **Deployment Oversights:** The AI initially attempted to deploy Playwright on Render's native Node.js environment, which failed due to missing OS-level browser dependencies. We corrected this by shifting the backend to a Docker-based deployment using the official Playwright base image.
+- **Memory vs Accuracy:** Using Playwright is heavy. It takes up way more memory than simple scraping, and I even had to switch the backend to a Docker deployment on Render just so I could install the browser dependencies. It was a pain, but it was the only way to beat the hover/dwell time bot checks.
+- **Splitting up the Database:** I decided to separate `products`, `price_history`, and `scrape_logs` into three different tables. This meant I had to write slightly messier join queries on the frontend, but it keeps the main product table clean and stops the database from getting bloated with thousands of price arrays over time.
+
+## AI Tools: Mistakes & Corrections
+
+I used AI a lot while building this, but it definitely got some things wrong on the first try, which I had to fix manually:
+
+- **Missing the anti-bot hover check:** At first, the AI just gave me code that did `page.click('.price-reveal')`. This failed miserably because the site checks if your mouse actually hovered over the element for a certain amount of time. I had to go in and add `page.mouse.move()` and `page.waitForTimeout()` to simulate a real human hesitating before clicking.
+- **Database schema bugs:** The AI tried to use the external product ID from the mock store as the primary UUID in my Supabase tables. This caused huge issues with upsert conflicts. I had to redesign the schema to use our own internal UUID as the primary key, and keep the store's ID as a separate `external_id` column.
+- **Deployment failures:** The AI confidently told me to just push the code to Render as a standard Web Service. It completely forgot that Playwright needs OS-level dependencies to run headless browsers. The build failed immediately. I had to figure out how to write a Dockerfile using the official Playwright base image and switch my Render setup to use Docker instead.
