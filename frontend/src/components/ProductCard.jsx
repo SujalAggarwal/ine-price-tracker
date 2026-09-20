@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { formatCurrency, timeAgo } from '../utils/formatters';
-import { Package, TrendingUp, TrendingDown, Minus, Clock } from 'lucide-react';
+import { Package, TrendingUp, TrendingDown, Minus, Clock, ExternalLink, Activity } from 'lucide-react';
+import ScrapeLogModal from './ScrapeLogModal';
 
 // Simple SVG sparkline component
 function Sparkline({ data }) {
@@ -41,6 +42,8 @@ function Sparkline({ data }) {
 }
 
 export default function ProductCard({ product }) {
+  const [showLogs, setShowLogs] = useState(false);
+  
   const latestPrice = product.price_history?.[0];
   const priceValue = latestPrice?.price;
   const stockStatus = latestPrice?.stock_status || 'unknown';
@@ -76,10 +79,21 @@ export default function ProductCard({ product }) {
         </div>
         
         {/* Details */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 pr-8 relative">
           <h3 className="font-semibold text-lg text-white truncate mb-1" title={product.name}>
             {product.name}
           </h3>
+          
+          {/* External Link */}
+          <a 
+            href={product.url} 
+            target="_blank" 
+            rel="noreferrer"
+            className="absolute top-0 right-0 p-1 text-white/30 hover:text-white/80 transition-colors"
+            title="View on store"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </a>
           
           <div className="flex items-center gap-2 mb-3">
             <span className={`text-xs px-2.5 py-1 rounded-md border font-medium ${statusColors[stockStatus]}`}>
@@ -102,25 +116,28 @@ export default function ProductCard({ product }) {
           <Sparkline data={product.price_history} />
         </div>
         
-        <div className="text-right shrink-0">
+        <div className="text-right shrink-0 flex flex-col items-end">
           <p className="text-[10px] text-textMain/50 mb-1 uppercase tracking-wider font-semibold">Last Checked</p>
-          <div className="flex items-center gap-1.5 text-xs text-textMain">
+          <div className="flex items-center gap-1.5 text-xs text-textMain mb-2">
             <Clock className="w-3.5 h-3.5" />
             {timeAgo(product.last_scraped_at)}
           </div>
+          
+          <button 
+            onClick={() => setShowLogs(true)}
+            className="flex items-center gap-1.5 text-[10px] font-medium bg-white/5 hover:bg-white/10 text-white/70 hover:text-white py-1 px-2.5 rounded border border-white/10 transition-colors"
+          >
+            <Activity className="w-3 h-3" />
+            VIEW LOGS
+          </button>
         </div>
       </div>
       
-      {/* External Link */}
-      <a 
-        href={product.url} 
-        target="_blank" 
-        rel="noreferrer"
-        className="absolute inset-0 z-20"
-        title="View on store"
-      >
-        <span className="sr-only">View product</span>
-      </a>
+      <ScrapeLogModal 
+        isOpen={showLogs} 
+        onClose={() => setShowLogs(false)} 
+        product={product} 
+      />
     </div>
   );
 }
