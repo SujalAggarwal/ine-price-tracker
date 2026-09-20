@@ -38,7 +38,12 @@ process.on('SIGTERM', async () => {
  */
 router.post('/scrape', async (req, res, next) => {
   try {
-    const providedSecret = req.headers['x-cron-secret'];
+    // Accept both X-Cron-Secret header and Authorization: Bearer <secret>
+    const xCronSecret = req.headers['x-cron-secret'];
+    const authHeader = req.headers['authorization'];
+    const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const providedSecret = xCronSecret || bearerSecret;
+
     const expectedSecret = process.env.CRON_SECRET;
 
     if (!expectedSecret) {
