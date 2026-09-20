@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CheckCircle2, AlertCircle, Clock, ExternalLink } from 'lucide-react';
+import { X, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function ScrapeLogModal({ isOpen, onClose, product }) {
+  // Close on Escape key
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    if (isOpen) window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const logs = product.scrape_logs || [];
@@ -16,8 +23,11 @@ export default function ScrapeLogModal({ isOpen, onClose, product }) {
         onClick={onClose}
       ></div>
       
-      {/* Modal content */}
-      <div className="relative w-full max-w-2xl max-h-[85vh] bg-background border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      {/* Modal content - stopPropagation prevents backdrop close when clicking inside */}
+      <div 
+        className="relative w-full max-w-2xl max-h-[85vh] bg-background border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
