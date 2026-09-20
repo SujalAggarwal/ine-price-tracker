@@ -4,6 +4,7 @@ import Header from './components/Header';
 import ProductCard from './components/ProductCard';
 import SearchModal from './components/SearchModal';
 import EmptyState from './components/EmptyState';
+import ScrapeLogModal from './components/ScrapeLogModal';
 import { fetchProducts } from './utils/api';
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [selectedLogProduct, setSelectedLogProduct] = useState(null);
 
   const loadProducts = async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -112,7 +114,11 @@ export default function App() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-up">
             {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                onViewLogs={() => setSelectedLogProduct(product)}
+              />
             ))}
           </div>
         )}
@@ -131,6 +137,13 @@ export default function App() {
           onTrackSuccess={handleProductTracked}
         />
       )}
+
+      {/* Scrape Log Modal - single global instance */}
+      <ScrapeLogModal
+        isOpen={!!selectedLogProduct}
+        onClose={() => setSelectedLogProduct(null)}
+        product={selectedLogProduct || {}}
+      />
     </div>
   );
 }

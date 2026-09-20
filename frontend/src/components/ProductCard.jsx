@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { formatCurrency, timeAgo } from '../utils/formatters';
-import { Package, TrendingUp, TrendingDown, Minus, Clock, ExternalLink, Activity } from 'lucide-react';
-import ScrapeLogModal from './ScrapeLogModal';
+import { Package, Clock, ExternalLink, Activity } from 'lucide-react';
 
 // Simple SVG sparkline component
 function Sparkline({ data }) {
@@ -41,9 +40,7 @@ function Sparkline({ data }) {
   );
 }
 
-export default function ProductCard({ product }) {
-  const [showLogs, setShowLogs] = useState(false);
-  
+export default function ProductCard({ product, onViewLogs }) {
   const latestPrice = product.price_history?.[0];
   const priceValue = latestPrice?.price;
   const stockStatus = latestPrice?.stock_status || 'unknown';
@@ -124,7 +121,7 @@ export default function ProductCard({ product }) {
           </div>
           
           <button 
-            onClick={() => setShowLogs(true)}
+            onClick={onViewLogs}
             className="flex items-center gap-1.5 text-[10px] font-medium bg-white/5 hover:bg-white/10 text-white/70 hover:text-white py-1 px-2.5 rounded border border-white/10 transition-colors"
           >
             <Activity className="w-3 h-3" />
@@ -132,12 +129,6 @@ export default function ProductCard({ product }) {
           </button>
         </div>
       </div>
-      
-      <ScrapeLogModal 
-        isOpen={showLogs} 
-        onClose={() => setShowLogs(false)} 
-        product={product} 
-      />
     </div>
   );
 }
