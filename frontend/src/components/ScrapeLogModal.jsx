@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X, CheckCircle2, AlertCircle, Clock, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -7,7 +8,7 @@ export default function ScrapeLogModal({ isOpen, onClose, product }) {
 
   const logs = product.scrape_logs || [];
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
@@ -86,6 +87,7 @@ export default function ScrapeLogModal({ isOpen, onClose, product }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
